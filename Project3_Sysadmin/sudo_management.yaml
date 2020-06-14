@@ -1,0 +1,15 @@
+- hosts: vbox
+  user: adrism6
+  tasks:
+    - name: Install sudo
+      apt:
+        update_cache: yes
+        name: sudo
+        state: latest
+      become: yes
+    - name: Add user to sudo group
+      user:
+        name: adrism6
+        groups: sudo
+        append: yes
+      become: yes

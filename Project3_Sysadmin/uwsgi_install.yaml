@@ -1,0 +1,9 @@
+- hosts: vbox
+  user: adrism6
+  tasks:
+    - name: ensure uwsgi is at the latest version
+      pip:
+        name:
+          - uwsgi
+          - wheel
+        state: latest

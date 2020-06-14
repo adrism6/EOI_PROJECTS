@@ -1,0 +1,8 @@
+- hosts: vbox
+  user: adrism6
+  tasks:
+    - name: Clone shield project
+      git:
+        dest: /var/www/shield
+        repo: https://github.com/asamarin/shield.git
+      become: yes

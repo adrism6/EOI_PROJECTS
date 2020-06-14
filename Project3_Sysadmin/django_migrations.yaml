@@ -1,0 +1,31 @@
+- hosts: vbox
+  user: adrism6
+  tasks:
+    - name: Make migrations with django
+      django_manage:
+        app_path: /var/www/shield
+        virtualenv: /var/www/shield/venv
+        command: makemigrations
+      become: yes
+    - name: Migrate with django
+      django_manage:
+        app_path: /var/www/shield
+        virtualenv: /var/www/shield/venv
+        command: migrate
+      become: yes
+    - name: Load data with django
+      django_manage:
+        app_path: /var/www/shield
+        virtualenv: /var/www/shield/venv
+        command: loaddata
+        fixtures: /var/www/shield/metahumans/dumpdata.json
+      become: yes
+    - name: Collect static assets
+      shell: echo "STATIC_ROOT = os.path.join(BASE_DIR, 'static')" >> "/var/www/shield/shield/settings.py"
+      become: yes
+    - name: Collectstatic with django
+      django_manage:
+        app_path: /var/www/shield
+        virtualenv: /var/www/shield/venv
+        command: collectstatic
+      become: yes

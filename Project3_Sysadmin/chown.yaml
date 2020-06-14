@@ -1,0 +1,11 @@
+- hosts: vbox
+  user: adrism6
+  tasks:
+    - name: Change permissions
+      file:
+        recurse: yes
+        state: directory
+        owner: www-data
+        group: www-data
+        path: /var/www/shield
+      become: yes

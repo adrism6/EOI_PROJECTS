@@ -1,0 +1,9 @@
+- hosts: vbox
+  user: adrism6
+  tasks:
+    - name: Install nginx (apt)
+    - name: Install uwsgi (pip)
+    - name: Clone shield project (git)
+    - name: Replace /etc/ssh/sshd_config (replace)
+      replace:
+        #PasswordAuthenticaction no -> PasswordAuthenticaction yes
