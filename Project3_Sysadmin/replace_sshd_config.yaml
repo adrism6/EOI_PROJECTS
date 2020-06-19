@@ -1,8 +1,0 @@
-- hosts: vbox
-  user: adrism6
-  tasks:
-    - name: Replace Authentication Password configuration of sshd
-      replace:
-        path: /etc/ssh/sshd_config
-        regexp:  ^#PasswordAuthentication yes$
-        replace: PasswordAuthentication no

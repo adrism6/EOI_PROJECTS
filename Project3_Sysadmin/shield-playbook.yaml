@@ -1,0 +1,207 @@
+- hosts: vbox
+  user: adrism6
+  become: yes
+  become_method: su
+  tasks:
+    - name: update cache
+      apt:
+        update_cache: yes
+        name: sudo
+    - name: ensure group sudo exists
+      group:
+        name: sudo
+        state: present
+    - name: add user to sudo group
+      user:
+        name: adrism6
+        groups: sudo
+        append: yes
+- hosts: vbox
+  user: adrism6
+  become: yes
+  tasks:
+    - name: ensure nginx is at the latest version
+      apt:
+        name:
+          - nginx
+          - jq
+          - git
+          - python3-pip
+          - python3-venv
+        state: latest
+    - name: clone shield project
+      git:
+        dest: /var/www/shield
+        repo: https://github.com/adrism6/shield.git
+    - name: create virtual environment, ensure wheel is at the latest version
+      pip:
+        virtualenv: /var/www/shield/venv
+        virtualenv_command: /usr/bin/python3.7 -m venv
+        name: wheel
+        state: latest
+    - name: install requirements
+      pip:
+        virtualenv: /var/www/shield/venv
+        requirements: /var/www/shield/requirements.txt
+    - name: make migrations with django
+      django_manage:
+        app_path: /var/www/shield
+        virtualenv: /var/www/shield/venv
+        command: makemigrations
+    - name: migrate with django
+      django_manage:
+        app_path: /var/www/shield
+        virtualenv: /var/www/shield/venv
+        command: migrate
+    - name: load data with django
+      django_manage:
+        app_path: /var/www/shield
+        virtualenv: /var/www/shield/venv
+        command: loaddata
+        fixtures: /var/www/shield/metahumans/dumpdata.json
+    - name: collectstatic with django
+      django_manage:
+        app_path: /var/www/shield
+        virtualenv: /var/www/shield/venv
+        command: collectstatic
+    - name: change directory permissions
+      file:
+        recurse: yes
+        state: directory
+        owner: www-data
+        group: www-data
+        path: /var/www/shield
+    - name: ensure uwsgi is at the latest version
+      pip:
+        name: uwsgi
+        state: latest
+    - name: create vassals directory
+      file:
+        path: /etc/uwsgi/vassals
+        state: directory
+        mode: '0755'
+    - name: create logto directory
+      file:
+        path: /var/log/uwsgi
+        state: directory
+        mode: '0755'
+    - name: create logto file
+      file:
+        path: /var/log/uwsgi/shield.log
+        state: touch
+        owner: www-data
+        mode: '0644'
+    - name: create vassal configuration file
+      copy:
+        dest: /var/www/shield/uwsgi.ini
+        content: |
+          [uwsgi]
+          # Django-related settings
+          # the base directory (full path)
+          chdir           = /var/www/shield
+          # Django's wsgi file
+          module          = shield.wsgi
+          # the virtualenv (full path)
+          home            = /var/www/shield/venv
+          
+          # process-related settings
+          # maximum number of worker processes
+          processes       = 2
+          # the socket (use the full path to be safe
+          socket          = /tmp/shield.sock
+          # ... with appropriate permissions - may be needed
+          chmod-socket    = 660
+          chown-socket    = www-data:www-data
+          uid             = www-data
+          gid             = www-data
+          # clear environment on exit
+          vacuum          = true
+          logto           = /var/log/uwsgi/shield.log
+        mode: '0644'
+    - name: create a symbolic link
+      file:
+        src: /var/www/shield/uwsgi.ini
+        path: /etc/uwsgi/vassals/shield.ini
+        state: link
+    - name: create emperor configurationfile
+      copy:
+        dest: /etc/uwsgi/emperor.ini
+        content: |
+          [uwsgi]
+          emperor = /etc/uwsgi/vassals
+          uid = www-data
+          gid = www-data
+        mode: '0644'
+    - name: create systemd configuration file
+      copy:
+        dest: /etc/systemd/system/uwsgi-emperor.service
+        content: |
+          [Unit]
+          Description=uWSGI Emperor
+          After=syslog.target
+          
+          [Service]
+          ExecStart=/usr/local/bin/uwsgi --ini /etc/uwsgi/emperor.ini
+          # Requires systemd version 211 or newer
+          RuntimeDirectory=uwsgi
+          Restart=always
+          KillSignal=SIGQUIT
+          Type=notify
+          StandardError=syslog
+          NotifyAccess=all
+          
+          [Install]
+          WantedBy=multi-user.target
+        mode: '0644'
+    - name: inform systemd to reload
+      systemd:
+        daemon_reload: yes
+    - name: start uwsgi emperor service
+      systemd:
+        name: uwsgi-emperor
+        state: started
+    - name: enable autostart emperor
+      systemd:
+        name: uwsgi-emperor
+        enabled: yes
+    - name: remove welcome page of nginx
+      file:
+        path: /etc/nginx/sites-enabled/default
+        state: absent
+    - name: create nginx configuration file
+      copy:
+        dest: /etc/nginx/sites-available/shield.conf
+        content: |
+          # the upstream component nginx needs to connect to
+          upstream django {
+              server unix:///tmp/shield.sock;
+          }
+          
+          # configuration of the server
+          server {
+              # the port your site will be served on
+              listen      80;
+              # the domain name it will serve for
+              server_name localhost; # substitute your machine's IP address or FQDN
+              charset     utf-8;
+          
+              location /static {
+                  alias /var/www/shield/static; # your Django project's static files - amend as required
+              }
+          
+              # Finally, send all non-media requests to the Django server.
+              location / {
+                  uwsgi_pass  django;
+                  include     /etc/nginx/uwsgi_params; # the uwsgi_params file you installed
+              }
+          }
+        mode: '0644'
+    - name: create a symbolic link
+      file:
+        src: /etc/nginx/sites-available/shield.conf
+        path: /etc/nginx/sites-enabled/shield.conf
+        state: link
+    - name: restart nginx
+      systemd:
+        name: nginx
+        state: restarted

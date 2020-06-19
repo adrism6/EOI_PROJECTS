@@ -1,8 +1,0 @@
-- hosts: vbox
-  user: adrism6
-  tasks:
-    - name: Create virtual environment
-      pip:
-        virtualenv: /var/www/shield/venv
-        virtualenv_command: /usr/bin/python3.7 -m venv
-        requirements: /var/www/shield/requirements.txt
