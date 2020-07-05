@@ -1,8 +1,10 @@
-from PyQt5.QtGui import QKeySequence, QTextDocument, QFont, QCursor, QMouseEvent
+from PyQt5.QtGui import QKeySequence, QFont, QCursor
 from PyQt5.QtWidgets import *
-from PyQt5.QtCore import Qt, QDir, QEvent
+from PyQt5.QtCore import Qt, QDir, QSize
 from os.path import expanduser, isdir
-from os import getcwd, remove
+from os import remove
+from PyQt5.QtWebEngineWidgets import QWebEngineView
+from markdown2 import Markdown
 
 
 app = QApplication([])
@@ -56,6 +58,7 @@ def new_document():
     global file_path
     if check_is_modified() == True:
         editor.clear()
+        webengine.markdown_to_html()
         file_path = None
 
 
@@ -75,6 +78,7 @@ def show_open_dialog():
                 file_contents = f.read()
             editor.setPlainText(file_contents)
             file_path = filename
+            webengine.markdown_to_html()
 
 
 open_action = QAction("&Open file...")
@@ -89,6 +93,7 @@ def save():
     else:
         with open(file_path, "w") as f:
             f.write(editor.toPlainText())
+        webengine.markdown_to_html()
         editor.document().setModified(False)
         return True
 
@@ -135,17 +140,24 @@ def show_tools_dialog():
             <p>- Open file: Opens an existing file.</p>
             <p>- Save: Saves the changes of the file. If the file is new, name it and select a directory.</p>
             <p>- Close: Closes the application.</p>
-        <b><p>TreeView doble click:</p></b>
+            <p>- View Menu: Click to show or close each dock widget.</p>
+        <b><p>File Explorer doble click:</p></b>
             <p>- On directories: Opens and closes the directory on the treeview.</p>
             <p>- On files: Opens on the editor, if file is acceptable.</p>
-        <b><p>TreeView right click:</p></b>
+        <b><p>File Explorer right click:</p></b>
             <p>- Open: Opens files on the editor, if file is acceptable.</p>
             <p>- New file: Opens an empty file with the given name and directory.</p>
             <p>- Rename: Renames the selected file and places it in the selected directory.</p>
             <p>- Delete: Deletes the selected file.</p>
+        <b><p>Markdown Viewer:</p></b>
+            <p>- Generates a HTML corresponding to the Markdown given in the editor.</p>
+            <p>- Automatically generated when new files are opened or current file is saved.</p>
+            <p>- Can update the current HTML view with the "Refresh" button.</p>
     """
     QMessageBox.about(window, "Poképad tools", text)
 
+
+view_menu = window.menuBar().addMenu("&View")
 
 help_menu = window.menuBar().addMenu("&Help")
 
@@ -168,19 +180,19 @@ class MyTreeView(QTreeView):
         self.model.setRootPath(QDir.rootPath())
         self.tree = QTreeView()
         self.tree.setModel(self.model)
-        path = expanduser("~")  # antes tenia de funcion getcwd()
+        path = expanduser("~")
         self.tree.setRootIndex(self.model.index(path))
-        # estaria bien implementar que se abra desde home hasta el directorio actual
         self.tree.doubleClicked.connect(self.open_file)
         self.tree.setSortingEnabled(True)
-        self.tree.setColumnWidth(0, 150)  # estaria bien implementar que se ajuste solo
+        header = self.tree.header()
+        header.setSectionResizeMode(3)
         self.tree.setContextMenuPolicy(Qt.CustomContextMenu)
         self.tree.customContextMenuRequested.connect(self.context_menu)
-        dockwidget = QDockWidget("TreeView")
+        dockwidget = QDockWidget("File Explorer")
         dockwidget.setWidget(self.tree)
         dockwidget.setAllowedAreas(Qt.LeftDockWidgetArea)
-        global window
         window.addDockWidget(Qt.LeftDockWidgetArea, dockwidget)
+        view_menu.addAction(dockwidget.toggleViewAction())
 
     def context_menu(self):
         menu = QMenu()
@@ -209,6 +221,7 @@ class MyTreeView(QTreeView):
                     file_contents = f.read()
                 editor.setPlainText(file_contents)
                 file_path = filename
+                webengine.markdown_to_html()
 
     def new_file(self):
         global file_path
@@ -221,6 +234,7 @@ class MyTreeView(QTreeView):
                     f.write(file_contents)
                 editor.setPlainText(file_contents)
                 file_path = newname
+                webengine.markdown_to_html()
 
     def rename_file(self):
         global file_path
@@ -237,6 +251,7 @@ class MyTreeView(QTreeView):
                 if filename == file_path:
                     file_path = newname
                 remove(filename)
+                webengine.markdown_to_html()
                 return True
             return False
 
@@ -248,10 +263,35 @@ class MyTreeView(QTreeView):
             editor.clear()
             file_path = None
         remove(filename)
+        webengine.markdown_to_html()
 
 
 treeview = MyTreeView()
 
+
+class MyWebEngineView(QWebEngineView):
+    def __init__(self, parent=None):
+        super().__init__(parent)
+        self.view = QWebEngineView()
+        refresh_button = QPushButton(window)
+        refresh_button.setText("Refresh")
+        refresh_button.clicked.connect(self.markdown_to_html)
+        window.menuBar().setCornerWidget(refresh_button, corner=Qt.TopRightCorner)
+        dockwidget = QDockWidget("Markdown Viewer")
+        dockwidget.setWidget(self.view)
+        dockwidget.setAllowedAreas(Qt.RightDockWidgetArea)
+        dockwidget.setMinimumWidth(250)
+        window.addDockWidget(Qt.RightDockWidgetArea, dockwidget)
+        view_menu.addAction(dockwidget.toggleViewAction())
+
+    def markdown_to_html(self):
+        mk = Markdown()
+        editor_text = editor.toPlainText()
+        content = mk.convert(editor_text)
+        self.view.setHtml(content)
+
+
+webengine = MyWebEngineView()
 
 window.show()
 app.exec()
