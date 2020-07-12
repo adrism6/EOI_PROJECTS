@@ -14,7 +14,7 @@ class Wall(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.x, self.y = x, y
         self.rect.x, self.rect.y = x * TILESIZE, y * TILESIZE
-        self.health = 5
+        self.health = 3
 
     def receive_damage(self, damage):
         self.health -= damage
@@ -161,6 +161,14 @@ class Mob(pygame.sprite.Sprite):
         self.last_shot_time = pygame.time.get_ticks()
 
 
+#  ____  _        _ __   _______ ____
+# |  _ \| |      / \\ \ / / ____|  _ \
+# | |_) | |     / _ \\ V /|  _| | |_) |
+# |  __/| |___ / ___ \| | | |___|  _ <
+# |_|   |_____/_/   \_\_| |_____|_| \_\
+#
+
+
 class Player(Mob):
     def __init__(self, game, position):
         max_speed = MOBS["PLAYER"]["MAX_SPEED"]
@@ -207,6 +215,14 @@ class Player(Mob):
 
     def changing_weapons(self, weapon):
         self.weapon_name = weapon
+
+
+#  _____ _   _ _____ __  __ ___ _____ ____
+# | ____| \ | | ____|  \/  |_ _| ____/ ___|
+# |  _| |  \| |  _| | |\/| || ||  _| \___ \
+# | |___| |\  | |___| |  | || || |___ ___) |
+# |_____|_| \_|_____|_|  |_|___|_____|____/
+#
 
 
 class Bee(Mob):
@@ -299,6 +315,14 @@ class Tower(Mob):
         self.move()
 
 
+#  ____  _   _ _     _     _____ _____
+# | __ )| | | | |   | |   | ____|_   _|
+# |  _ \| | | | |   | |   |  _|   | |
+# | |_) | |_| | |___| |___| |___  | |
+# |____/ \___/|_____|_____|_____| |_|
+#
+
+
 class Bullet(pygame.sprite.Sprite):
     def __init__(
         self,
@@ -349,6 +373,14 @@ class Bullet(pygame.sprite.Sprite):
             self.kill()
 
 
+#  ___ _____ _____ __  __ ____
+# |_ _|_   _| ____|  \/  / ___|
+#  | |  | | |  _| | |\/| \___ \
+#  | |  | | | |___| |  | |___) |
+# |___| |_| |_____|_|  |_|____/
+#
+
+
 class Item(pygame.sprite.Sprite):
     def __init__(self, game, position, kind):
         self.groups = game.all_sprites, game.items
@@ -379,13 +411,22 @@ class HealthPack(Item):
         self.rect.topleft = position
 
     def picked_by(self, picker):
+        fruit = ""
         for item in ITEMS["HEALTHPACK"]:
             if ITEMS["HEALTHPACK"][item]["ID"] == self.index:
                 heal = ITEMS["HEALTHPACK"][item]["HEAL"]
-        if picker.health < picker.max_health:
-            picker.health = min(picker.health + heal, picker.max_health)
-            self.game.health_fx.play()
+                fruit = item
+        if fruit == "AVOCADO" or fruit == "EGGPLANT":
+            picker.health -= heal
+            if picker.health <= 0:
+                picker.health = 0
+            self.game.poison_fx.play()
             self.kill()
+        else:
+            if picker.health < picker.max_health:
+                picker.health = min(picker.health + heal, picker.max_health)
+                self.game.health_fx.play()
+                self.kill()
 
 
 class SpeedUp(Item):

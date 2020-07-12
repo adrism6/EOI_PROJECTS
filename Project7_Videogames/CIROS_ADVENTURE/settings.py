@@ -84,8 +84,8 @@ MOBS = {
 ITEM_HOVER_SPEED = 0.01
 ITEMS = {
     "HEALTHPACK": {
-        "APPLE": {"ID": 0, "HEAL": 20, "FX": "heal.wav", "IMG": "apple.png"},
-        "BANANA": {"ID": 1, "HEAL": 20, "FX": "heal.wav", "IMG": "banana.png"},
+        "APPLE": {"ID": 0, "HEAL": 30, "FX": "heal.wav", "IMG": "apple.png"},
+        "BANANA": {"ID": 1, "HEAL": 10, "FX": "heal.wav", "IMG": "banana.png"},
         "BLACKBERRIES": {
             "ID": 2,
             "HEAL": 20,
@@ -99,15 +99,15 @@ ITEMS = {
             "IMG": "blueberries.png",
         },
         "CHERRIES": {"ID": 4, "HEAL": 20, "FX": "heal.wav", "IMG": "cherries.png"},
-        "COCONUT": {"ID": 5, "HEAL": 20, "FX": "heal.wav", "IMG": "coconut.png"},
-        "EGGPLANT": {"ID": 6, "HEAL": 20, "FX": "heal.wav", "IMG": "eggplant.png"},
+        "COCONUT": {"ID": 5, "HEAL": 50, "FX": "heal.wav", "IMG": "coconut.png"},
+        "EGGPLANT": {"ID": 6, "HEAL": 30, "FX": "heal.wav", "IMG": "eggplant.png"},
         "GRAPES": {"ID": 7, "HEAL": 20, "FX": "heal.wav", "IMG": "grapes.png"},
-        "KIWI": {"ID": 8, "HEAL": 20, "FX": "heal.wav", "IMG": "kiwi.png"},
+        "KIWI": {"ID": 8, "HEAL": 30, "FX": "heal.wav", "IMG": "kiwi.png"},
         "LEMON": {"ID": 9, "HEAL": 20, "FX": "heal.wav", "IMG": "lemon.png"},
         "ORANGE": {"ID": 10, "HEAL": 20, "FX": "heal.wav", "IMG": "orange.png"},
-        "PEAR": {"ID": 11, "HEAL": 20, "FX": "heal.wav", "IMG": "pear.png"},
-        "PINEAPPLE": {"ID": 12, "HEAL": 20, "FX": "heal.wav", "IMG": "pineapple.png"},
-        "PLUM": {"ID": 13, "HEAL": 20, "FX": "heal.wav", "IMG": "plum.png"},
+        "PEAR": {"ID": 11, "HEAL": 30, "FX": "heal.wav", "IMG": "pear.png"},
+        "PINEAPPLE": {"ID": 12, "HEAL": 70, "FX": "heal.wav", "IMG": "pineapple.png"},
+        "PLUM": {"ID": 13, "HEAL": 40, "FX": "heal.wav", "IMG": "plum.png"},
         "RASPBERRIES": {
             "ID": 14,
             "HEAL": 20,
@@ -116,11 +116,11 @@ ITEMS = {
         },
         "STRAWBERRY": {
             "ID": 15,
-            "HEAL": 20,
+            "HEAL": 50,
             "FX": "heal.wav",
             "IMG": "strawberry.png",
         },
-        "TOMATO": {"ID": 16, "HEAL": 20, "FX": "heal.wav", "IMG": "tomato.png"},
+        "TOMATO": {"ID": 16, "HEAL": 40, "FX": "heal.wav", "IMG": "tomato.png"},
         "TOMATOES_CHERRY": {
             "ID": 17,
             "HEAL": 20,
@@ -129,16 +129,17 @@ ITEMS = {
         },
         "WATTERMELON": {
             "ID": 18,
-            "HEAL": 20,
+            "HEAL": 100,
             "FX": "heal.wav",
             "IMG": "watermelon.png",
         },
         "WATTERMELON_SLICE": {
             "ID": 19,
-            "HEAL": 20,
+            "HEAL": 25,
             "FX": "heal.wav",
             "IMG": "watermelon_slice.png",
         },
+        "AVOCADO": {"ID": 20, "HEAL": 15, "FX": "heal.wav", "IMG": "avocado.png",},
     },
     "SPEEDUP": {"SPEED": 50, "TTL": 3000, "IMG": "speed.png"},
 }

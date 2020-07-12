@@ -31,15 +31,19 @@ class Game:
         self.load_img_and_sound()
         pygame.mixer.music.play(-1)
 
+    #  _     ___    _    ____
+    # | |   / _ \  / \  |  _ \
+    # | |  | | | |/ _ \ | | | |
+    # | |__| |_| / ___ \| |_| |
+    # |_____\___/_/   \_\____/
+    #
+
     def load_img_and_sound(self):
         self.root_folder = path.dirname(__file__)
         fx_folder = path.join(self.root_folder, "sound")
 
         self.main_menu_img = pygame.image.load(
             path.join(self.root_folder, "img/main_menu.png")
-        ).convert_alpha()
-        self.new_weapon_img = pygame.image.load(
-            path.join(self.root_folder, "img/new_weapon_menu.png")
         ).convert_alpha()
 
         img_bullet_folder = path.join(self.root_folder, "img/bullets")
@@ -107,25 +111,13 @@ class Game:
         )
 
         self.health_fx = pygame.mixer.Sound(path.join(fx_folder, "health.wav"))
+        self.poison_fx = pygame.mixer.Sound(path.join(fx_folder, "poison.wav"))
         self.speed_fx = pygame.mixer.Sound(path.join(fx_folder, "speed.wav"))
         self.cut_down_fx = pygame.mixer.Sound(path.join(fx_folder, "cut_down.wav"))
         self.game_over_fx = pygame.mixer.Sound(path.join(fx_folder, "game_over.wav"))
         self.new_weapon_fx = pygame.mixer.Sound(path.join(fx_folder, "new_weapon.wav"))
         self.win_fx = pygame.mixer.Sound(path.join(fx_folder, "win.wav"))
         pygame.mixer.music.load(path.join(fx_folder, "ElBosqueEncantado.mp3"))
-
-    def start_game(self):
-        self.run()
-
-    def run(self):
-        self.load_data()
-        self.score_levels += 1
-        self.playing = True
-        while self.playing:
-            self.dt = self.clock.tick(FPS) / 1000
-            self.events()
-            self.update()
-            self.draw()
 
     def load_data(self):
         self.all_sprites = pygame.sprite.Group()
@@ -165,6 +157,56 @@ class Game:
         x, y = self.map.get_empty_position()
         self.map.map_data[y][x] = "T"
 
+    #  ____  _   _ _   _ _   _ ___ _   _  ____
+    # |  _ \| | | | \ | | \ | |_ _| \ | |/ ___|
+    # | |_) | | | |  \| |  \| || ||  \| | |  _
+    # |  _ <| |_| | |\  | |\  || || |\  | |_| |
+    # |_| \_\\___/|_| \_|_| \_|___|_| \_|\____|
+    #
+
+    def start_game(self):
+        self.run()
+
+    def run(self):
+        self.load_data()
+        self.score_levels += 1
+        self.playing = True
+        while self.playing:
+            self.dt = self.clock.tick(FPS) / 1000
+            self.events()
+            self.update()
+            self.draw()
+
+    def events(self):
+        for event in pygame.event.get():
+            if event.type == pygame.QUIT:
+                pygame.quit()
+                quit()
+            elif (
+                event.type == pygame.MOUSEBUTTONDOWN
+                or event.type == pygame.MOUSEBUTTONUP
+            ):
+                if event.button == 4 or event.button == 5:
+                    self.button = event.button
+
+    def update(self):
+        self.all_sprites.update()
+        self.counting_destroyed_mobs()
+        self.changing_current_weapon()
+        if self.player.health == 0:
+            self.playing = False
+            self.game_over()
+
+        if len(self.nests) == 0:
+            self.next_level()
+
+    #  _____ _   _ _   _  ____ _____ ___ ___  _   _ ____
+    # |  ___| | | | \ | |/ ___|_   _|_ _/ _ \| \ | / ___|
+    # | |_  | | | |  \| | |     | |  | | | | |  \| \___ \
+    # |  _| | |_| | |\  | |___  | |  | | |_| | |\  |___) |
+    # |_|    \___/|_| \_|\____| |_| |___\___/|_| \_|____/
+    #
+
     def counting_destroyed_mobs(self):
         self.new_mobs = len(self.mobs)
         if self.total_mobs > self.new_mobs:
@@ -203,28 +245,12 @@ class Game:
             self.player.changing_weapons(self.saved_weapons[self.weapon_number])
             self.button = ""
 
-    def events(self):
-        for event in pygame.event.get():
-            if event.type == pygame.QUIT:
-                pygame.quit()
-                quit()
-            elif (
-                event.type == pygame.MOUSEBUTTONDOWN
-                or event.type == pygame.MOUSEBUTTONUP
-            ):
-                if event.button == 4 or event.button == 5:
-                    self.button = event.button
-
-    def update(self):
-        self.all_sprites.update()
-        self.counting_destroyed_mobs()
-        self.changing_current_weapon()
-        if self.player.health == 0:
-            self.playing = False
-            self.game_over()
-
-        if len(self.nests) == 0:
-            self.next_level()
+    #  ____  ____      ___        __
+    # |  _ \|  _ \    / \ \      / /
+    # | | | | |_) |  / _ \ \ /\ / /
+    # | |_| |  _ <  / ___ \ V  V /
+    # |____/|_| \_\/_/   \_\_/\_/
+    #
 
     def draw(self):
         self.screen.fill(DARKGREEN)
@@ -257,11 +283,19 @@ class Game:
         self.screen.blit(levels_text, (175, 3))
         self.screen.blit(destroyed_text, (WIDTH - 135, 0))
 
-        weapon_background = pygame.Rect(108, 5, width - 38, height)
-        pygame.draw.rect(self.screen, WHITE, weapon_background)
-
         current_weapon_img = self.weapons_obtained[self.player.weapon_name]
+        weapon_width = current_weapon_img.get_rect().width
+        weapon_background = pygame.Rect(108, 5, weapon_width + 4, height)
+
+        pygame.draw.rect(self.screen, WHITE, weapon_background)
         self.screen.blit(current_weapon_img, (110, 5))
+
+    #  __  __ _____ _   _ _   _ ____
+    # |  \/  | ____| \ | | | | / ___|
+    # | |\/| |  _| |  \| | | | \___ \
+    # | |  | | |___| |\  | |_| |___) |
+    # |_|  |_|_____|_| \_|\___/|____/
+    #
 
     def main_menu(self):
         pygame.mixer.music.pause()
@@ -348,6 +382,7 @@ class Game:
         self.saved_weapons = [
             "WING",
         ]
+        pygame.mixer.music.play(-1)
         self.main_menu()
 
     def new_weapon_notification(self):
