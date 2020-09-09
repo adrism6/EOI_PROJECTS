@@ -8,7 +8,7 @@ BLACK = (0, 0, 0)
 RED = (200, 100, 100)
 INTENSERED = (255, 0, 0)
 GREEN = (100, 200, 100)
-DARKGREEN = (10, 20, 10)
+DARKGREEN = (40, 80, 40)
 INTENSEGREEN = (33, 158, 0)
 BLUE = (100, 100, 200)
 DARKBLUE = (25, 25, 50)
@@ -54,18 +54,38 @@ MOBS = {
         "IMG": "parrot.png",
         "FX": "hit.wav",
     },
-    "BEE": {
+    "RED_BEE": {
         "ID": 1,
         "HEALTH": 10,
         "ACCELERATION": 1000,
-        "MAX_SPEED": 50,
+        "MAX_SPEED": 75,
         "HIT_DAMAGE": 10,
         "VISION_RADIUS": 150,
         "IMG": "red_bee.png",
         "FX": "squish.wav",
     },
-    "BEE_NEST": {
+    "FAST_BEE": {
         "ID": 2,
+        "HEALTH": 20,
+        "ACCELERATION": 1750,
+        "MAX_SPEED": 200,
+        "HIT_DAMAGE": 5,
+        "VISION_RADIUS": 300,
+        "IMG": "fast_bee.png",
+        "FX": "squish.wav",
+    },
+    "GRAY_BEE": {
+        "ID": 3,
+        "HEALTH": 15,
+        "ACCELERATION": 1000,
+        "MAX_SPEED": 50,
+        "HIT_DAMAGE": 25,
+        "VISION_RADIUS": 1000,
+        "IMG": "gray_bee.png",
+        "FX": "squish.wav",
+    },
+    "BEE_NEST": {
+        "ID": 4,
         "HEALTH": 100,
         "MAX_POPULATION": 5,
         "SPAWN_FREQUENCY": 5000,
@@ -73,7 +93,7 @@ MOBS = {
         "FX": "hit.wav",
     },
     "TOWER": {
-        "ID": 3,
+        "ID": 5,
         "HEALTH": 100,
         "WEAPON_NAME": "TOWER_GUN",
         "IMG": "hunter.png",

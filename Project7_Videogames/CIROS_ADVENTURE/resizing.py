@@ -2,12 +2,12 @@ from PIL import Image
 
 # RESIZE IMAGE 'img' to new one with height 'baseheight' and proportional width
 
-baseheight = 70
-img = Image.open("./path/to/file.png")
+baseheight = 22
+img = Image.open("./img/mobs/gray_bee.png")
 wpercent = baseheight / float(img.size[1])
 wsize = int((float(img.size[0]) * float(wpercent)))
 img = img.resize((wsize, baseheight), Image.ANTIALIAS)
-img.save("./path/to/newfile.png")
+img.save("./img/mobs/gray_bee.png")
 
 # RESIZE IMAGE 'img' to new one with width 'basewidth' and proportional height
 """

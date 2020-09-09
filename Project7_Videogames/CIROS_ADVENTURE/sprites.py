@@ -227,13 +227,14 @@ class Player(Mob):
 
 class Bee(Mob):
     def __init__(
-        self, game, position, groups=(),
+        self, game, position, bee_name, groups=(),
     ):
-        max_speed = MOBS["BEE"]["MAX_SPEED"]
-        acceleration = MOBS["BEE"]["ACCELERATION"]
-        max_health = MOBS["BEE"]["HEALTH"]
-        damage = MOBS["BEE"]["HIT_DAMAGE"]
-        id = MOBS["BEE"]["ID"]
+        self.bee_name = bee_name
+        max_speed = MOBS[self.bee_name]["MAX_SPEED"]
+        acceleration = MOBS[self.bee_name]["ACCELERATION"]
+        max_health = MOBS[self.bee_name]["HEALTH"]
+        damage = MOBS[self.bee_name]["HIT_DAMAGE"]
+        id = MOBS[self.bee_name]["ID"]
         super().__init__(
             game,
             (game.all_sprites, game.mobs) + groups,
@@ -247,7 +248,7 @@ class Bee(Mob):
 
     def update(self):
         towards_player = self.game.player.position - self.position
-        if towards_player.magnitude() < MOBS["BEE"]["VISION_RADIUS"]:
+        if towards_player.magnitude() < MOBS[self.bee_name]["VISION_RADIUS"]:
             self.desired_velocity = towards_player
         else:
             self.desired_velocity = Vector2(uniform(-1, 1), uniform(-1, 1))
@@ -276,6 +277,8 @@ class BeeNest(Mob):
         self.last_spawn_time = 0
         self.max_population = max_population
         self.population = pygame.sprite.Group()
+        self.level = self.game.score_levels
+        self.weapons = len(self.game.saved_weapons)
 
     def update(self):
         time_since_last_spawn = pygame.time.get_ticks() - self.last_spawn_time
@@ -290,9 +293,20 @@ class BeeNest(Mob):
                     self.game,
                     Vector2(self.position.x, self.position.y)
                     + Vector2(uniform(-5, 5), uniform(-5, 5)),
+                    self.select_bee(),
                     (self.population,),
                 )
             self.last_spawn_time = pygame.time.get_ticks()
+
+    def select_bee(self):
+        bee_name = ["RED_BEE", "FAST_BEE", "GRAY_BEE"]
+        if self.weapons == 1:
+            bee_name = bee_name[0]
+        elif self.weapons == 2:
+            bee_name = bee_name[randint(0, 1)]
+        else:
+            bee_name = bee_name[randint(0, 2)]
+        return bee_name
 
 
 class Tower(Mob):
