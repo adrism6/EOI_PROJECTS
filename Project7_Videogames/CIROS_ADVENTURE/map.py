@@ -8,6 +8,7 @@ import random
 class Map:
     def __init__(self):
         self.map_data = []
+        self.boss = ""
 
     def load_from_file(self, filename):
         game_folder = path.dirname(__file__)
@@ -106,11 +107,13 @@ class Map:
                 position = Vector2(col, row) * TILESIZE
                 if tile == "1":
                     Wall(game, col, row)
+                if tile == "B":
+                    Boss(game, position)
                 if tile == "P":
                     self.player = Player(game, position)
                 if tile == "b":
                     Bee(game, position)
-                if tile == "B":
+                if tile == "N":
                     BeeNest(game, position)
                 if tile == "h":
                     HealthPack(game, position)

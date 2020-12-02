@@ -14,7 +14,7 @@ class Wall(pygame.sprite.Sprite):
         self.rect = self.image.get_rect()
         self.x, self.y = x, y
         self.rect.x, self.rect.y = x * TILESIZE, y * TILESIZE
-        self.health = 3
+        self.health = 30
 
     def receive_damage(self, damage):
         self.health -= damage
@@ -54,7 +54,10 @@ class Mob(pygame.sprite.Sprite):
     def update(self):
         pass
 
-    def move(self):
+    def move(self, *args):
+        if args:
+            args = args[0]
+
         if self.desired_velocity.magnitude() > 0:
             self.desired_velocity = self.desired_velocity.normalize()
 
@@ -68,9 +71,9 @@ class Mob(pygame.sprite.Sprite):
         self.position += self.velocity * self.game.dt
 
         self.rect.x = self.position.x
-        self.collide_with_walls("x")
+        self.collide_with_walls("x", args)
         self.rect.y = self.position.y
-        self.collide_with_walls("y")
+        self.collide_with_walls("y", args)
         self.wrap_around_world()
 
     def wrap_around_world(self):
@@ -87,9 +90,12 @@ class Mob(pygame.sprite.Sprite):
             self.position.y = HEIGHT
             self.rect.y = self.position.y
 
-    def collide_with_walls(self, dir):
-        hits = pygame.sprite.spritecollide(self, self.game.walls, False)
-        if len(hits) == 0:
+    def collide_with_walls(self, dir, *args):
+        if args[0] != "bosses":
+            hits = pygame.sprite.spritecollide(self, self.game.walls, False)
+            if len(hits) == 0:
+                return
+        else:
             return
 
         if dir == "x":
@@ -187,7 +193,7 @@ class Player(Mob):
         self.max_speed = max_speed
         self.weapon_name = ""
 
-    def update(self):
+    def update(self,):
         self.handle_input()
         self.move()
 
@@ -311,12 +317,28 @@ class BeeNest(Mob):
 
 class Tower(Mob):
     def __init__(self, game, position):
-        max_health = MOBS["TOWER"]["HEALTH"]
-        id = MOBS["TOWER"]["ID"]
+        self.weapons = len(game.saved_weapons)
+        if self.weapons == 4:
+            tower_type = "WALKING_TOWER_SLASH"
+        elif self.weapons == 5:
+            tower_type = "WALKING_TOWER"
+        else:
+            tower_type = "TOWER"
+
+        max_health = MOBS[tower_type]["HEALTH"]
+        max_speed = MOBS[tower_type]["MAX_SPEED"]
+        acceleration = MOBS[tower_type]["ACCELERATION"]
+        id = MOBS[tower_type]["ID"]
         super().__init__(
-            game, (game.all_sprites, game.mobs), position, 0, 0, max_health, id
+            game,
+            (game.all_sprites, game.mobs),
+            position,
+            max_speed,
+            acceleration,
+            max_health,
+            id,
         )
-        self.weapon_name = MOBS["TOWER"]["WEAPON_NAME"]
+        self.weapon_name = MOBS[tower_type]["WEAPON_NAME"]
 
     def update(self):
         target = self.game.player.position
@@ -325,8 +347,94 @@ class Tower(Mob):
         if 0 < towards_player.magnitude() < 200:
             self.shoot_at(target.x, target.y, self.game.players)
 
-        self.desired_velocity = towards_player
+        if towards_player.magnitude() < 500:
+            self.desired_velocity = towards_player
+        else:
+            self.desired_velocity = Vector2(0, 0)
+        self.avoid_mobs()
         self.move()
+
+
+# ____   ___  ____ ____  _____ ____
+# | __ ) / _ \/ ___/ ___|| ____/ ___|
+# |  _ \| | | \___ \___ \|  _| \___ \
+# | |_) | |_| |___) |__) | |___ ___) |
+# |____/ \___/|____/____/|_____|____/
+#
+
+
+class Boss(Mob):
+    def __init__(
+        self, game, position, groups=(),
+    ):
+        self.boss_name = ""
+        if game.score_levels % BOSS_LEVEL_DIVISOR == 0:
+            if game.won_bosses[0] == 0:
+                self.boss_name = "QUEEN_BEE"
+                game.won_bosses[0] = 1
+            elif game.won_bosses[1] == 0:
+                self.boss_name = "HUNTER_KING"
+                game.won_bosses[1] = 1
+            else:
+                bosses = ["QUEEN_BEE", "HUNTER_KING"]
+                for i in range(2):
+                    if all(game.counter):
+                        game.counter = [0, 0]
+                    else:
+                        if game.counter[i] == 0:
+                            self.boss_name = bosses[i]
+                            game.counter[i] = 1
+                            break
+        max_speed = MOBS[self.boss_name]["MAX_SPEED"]
+        acceleration = MOBS[self.boss_name]["ACCELERATION"]
+        max_health = MOBS[self.boss_name]["HEALTH"]
+        damage = MOBS[self.boss_name]["HIT_DAMAGE"]
+        id = MOBS[self.boss_name]["ID"]
+        super().__init__(
+            game,
+            (game.all_sprites, game.bosses, game.mobs) + groups,
+            position,
+            max_speed,
+            acceleration,
+            max_health,
+            id,
+        )
+        self.max_speed = max_speed
+        self.damage = damage
+        self.weapon_name = MOBS[self.boss_name]["WEAPON_NAME"]
+
+    def update(self):
+        towards_player = self.game.player.position - self.position
+        wall = pygame.sprite.spritecollideany(self, self.game.walls)
+        if towards_player.magnitude() < MOBS[self.boss_name]["VISION_RADIUS"]:
+            if wall:
+                wall.receive_damage(self.damage * self.game.dt)
+                if wall.health <= 0:
+                    self.desired_velocity = towards_player
+                else:
+                    self.desired_velocity = Vector2(0, 0)
+            else:
+                self.desired_velocity = towards_player
+        else:
+            if wall:
+                wall.receive_damage(self.damage * self.game.dt)
+                if wall.health <= 0:
+                    self.desired_velocity = Vector2(uniform(-1, 1), uniform(-1, 1))
+                else:
+                    self.desired_velocity = Vector2(0, 0)
+            else:
+                self.desired_velocity = Vector2(uniform(-1, 1), uniform(-1, 1))
+        self.avoid_mobs()
+        self.move("bosses")
+
+        if MOBS[self.boss_name]["CAN_DAMAGE"] == 1:
+            if pygame.sprite.collide_rect(self, self.game.player):
+                self.game.player.receive_damage(self.damage * self.game.dt)
+
+        if MOBS[self.boss_name]["CAN_SHOOT"] == 1:
+            target = self.game.player.position
+            if 0 < towards_player.magnitude() < 700:
+                self.shoot_at(target.x, target.y, self.game.players)
 
 
 #  ____  _   _ _     _     _____ _____

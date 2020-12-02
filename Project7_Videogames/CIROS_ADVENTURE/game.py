@@ -27,6 +27,11 @@ class Game:
         self.saved_weapons = [
             "WING",
         ]
+        self.won_bosses = [
+            0,
+            0,
+        ]
+        self.counter = [0, 0]
         self.button = ""
         self.load_img_and_sound()
         pygame.mixer.music.play(-1)
@@ -125,6 +130,7 @@ class Game:
         self.bullets = pygame.sprite.Group()
         self.mobs = pygame.sprite.Group()
         self.nests = pygame.sprite.Group()
+        self.bosses = pygame.sprite.Group()
         self.items = pygame.sprite.Group()
         self.players = pygame.sprite.Group()
 
@@ -141,9 +147,18 @@ class Game:
         self.player.changing_weapons(self.saved_weapons[self.weapon_number])
 
     def populate_map(self):
+        if self.score_levels % BOSS_LEVEL_DIVISOR == 0:
+            if self.won_bosses[0] == 0 or self.won_bosses[1] == 0:
+                x, y = self.map.get_empty_position()
+                self.map.map_data[y][x] = "B"
+            else:
+                for i in range(2):
+                    x, y = self.map.get_empty_position()
+                    self.map.map_data[y][x] = "B"
+
         for _ in range(3):
             x, y = self.map.get_empty_position()
-            self.map.map_data[y][x] = "B"
+            self.map.map_data[y][x] = "N"
 
         x, y = self.map.get_empty_position()
         self.map.map_data[y][x] = "P"
@@ -168,11 +183,13 @@ class Game:
         self.run()
 
     def run(self):
-        self.load_data()
         self.score_levels += 1
+        self.load_data()
         self.playing = True
         while self.playing:
             self.dt = self.clock.tick(FPS) / 1000
+            while self.dt > 1:
+                self.dt = self.dt / 10
             self.events()
             self.update()
             self.draw()
@@ -197,7 +214,7 @@ class Game:
             self.playing = False
             self.game_over()
 
-        if len(self.nests) == 0:
+        if len(self.nests) == 0 and len(self.bosses) == 0:
             self.next_level()
 
     #  _____ _   _ _   _  ____ _____ ___ ___  _   _ ____
@@ -218,16 +235,36 @@ class Game:
             self.total_mobs = self.new_mobs
 
     def adding_new_weapons(self):
-        if len(self.mobs) == 0:
-            if "GUN" not in self.saved_weapons:
-                self.saved_weapons.append("GUN")
-                return True
-            elif "MACHINEGUN" not in self.saved_weapons:
-                self.saved_weapons.append("MACHINEGUN")
-                return True
-            elif "SHOTGUN" not in self.saved_weapons:
-                self.saved_weapons.append("SHOTGUN")
-                return True
+        if len(self.mobs) == 0 or (self.score_levels + 1) % BOSS_LEVEL_DIVISOR == 0:
+            if len(self.mobs) == 0:
+                if self.check_current_weapons() == True:
+                    return True
+            elif self.score_levels + 1 == 2 and "GUN" not in self.saved_weapons:
+                if self.check_current_weapons() == True:
+                    return True
+            elif self.score_levels + 1 == 4 and "MACHINEGUN" not in self.saved_weapons:
+                if self.check_current_weapons() == True:
+                    return True
+            elif self.score_levels + 1 == 6 and "BAZOOKA" not in self.saved_weapons:
+                if self.check_current_weapons() == True:
+                    return True
+            elif self.score_levels + 1 == 8 and "SHOTGUN" not in self.saved_weapons:
+                if self.check_current_weapons() == True:
+                    return True
+
+    def check_current_weapons(self):
+        if "GUN" not in self.saved_weapons:
+            self.saved_weapons.append("GUN")
+            return True
+        elif "MACHINEGUN" not in self.saved_weapons:
+            self.saved_weapons.append("MACHINEGUN")
+            return True
+        elif "BAZOOKA" not in self.saved_weapons:
+            self.saved_weapons.append("BAZOOKA")
+            return True
+        elif "SHOTGUN" not in self.saved_weapons:
+            self.saved_weapons.append("SHOTGUN")
+            return True
 
     def changing_current_weapon(self):
         if self.button == 4:
@@ -375,21 +412,32 @@ class Game:
                 if event.type == pygame.KEYDOWN:
                     in_gameover_menu = False
 
-        self.player.health = PLAYER_HEALTH
+        self.player.health = MOBS["PLAYER"]["HEALTH"]
         self.score_levels = 0
         self.score_mobs = 0
         self.total_score_mobs = 0
         self.saved_weapons = [
             "WING",
         ]
+        self.won_bosses = [
+            0,
+            0,
+        ]
+        self.counter = [0, 0]
+        self.map.boss = ""
         pygame.mixer.music.play(-1)
         self.main_menu()
 
     def new_weapon_notification(self):
         if self.adding_new_weapons() == True:
-            title_text = self.small_font.render(
-                "CONGRATS, YOU'VE KILLED ALL ENEMIES!", True, BLACK
-            )
+            if len(self.mobs) == 0:
+                title_text = self.small_font.render(
+                    "CONGRATS, YOU'VE KILLED ALL ENEMIES!", True, BLACK
+                )
+            elif (self.score_levels + 1) % BOSS_LEVEL_DIVISOR == 0:
+                title_text = self.small_font.render(
+                    "CONGRATS, YOU'VE COMPLETED 5 ADDITIONAL LEVELS!", True, BLACK
+                )
             notification_text = self.small_font.render(
                 f"Now you can shoot in {self.saved_weapons[-1]} mode", True, BLACK
             )
